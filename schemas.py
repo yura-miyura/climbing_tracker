@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ClimbBase(BaseModel):
     name: str
@@ -10,6 +10,4 @@ class ClimbCreate(ClimbBase):
 
 class ClimbResponse(ClimbBase):
     id: int
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
