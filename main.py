@@ -31,7 +31,7 @@ def read_climb(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     climbs = db.query(models.Climb).offset(skip).limit(limit).all()
     return climbs
 
-@app.get("/climbs/", response_model=list[schemas.ClimbResponse])
+@app.get("/climbs/sent/", response_model=list[schemas.ClimbResponse])
 def read_sent_climbs(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     climbs = db.query(models.Climb).filter(models.Climb.is_sent).offset(skip).limit(limit).all()
     return climbs
