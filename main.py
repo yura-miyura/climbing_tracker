@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.schema import SchemaVisitable
 import models
 import schemas
 from database import SessionLocal, engine
 
-models.Base.meradata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -28,4 +29,9 @@ def create_climb(climb: schemas.ClimbCreate, db: Session = Depends(get_db)):
 @app.get("/climbs/", response_model=list[schemas.ClimbResponse])
 def read_climb(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     climbs = db.query(models.Climb).offset(skip).limit(limit).all()
+    return climbs
+
+@app.get("/climbs/", response_model=list[schemas.ClimbResponse])
+def read_sent_climbs(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    climbs = db.query(models.Climb).filter(models.Climb.is_sent).offset(skip).limit(limit).all()
     return climbs
