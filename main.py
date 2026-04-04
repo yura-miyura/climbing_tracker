@@ -2,6 +2,8 @@ from typing import Sequence
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy import select, Select
 import models
 import schemas
@@ -19,12 +21,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def read_index():
+    return FileResponse('static/index.html')
+
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Endpoints
 

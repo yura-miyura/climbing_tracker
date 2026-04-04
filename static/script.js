@@ -4,7 +4,11 @@ const logbook = document.getElementById('logbook');
 
 async function fetchClimbs(endpoint = 'climbs/') {
     try {
-        const response = await fetch(`http://localhost:8000/${endpoint}`);
+		const response = await fetch(`/${endpoint}`, {
+    		headers: {
+        	"ngrok-skip-browser-warning": "69420"
+    		}
+		});
         const climbs = await response.json();
 
         logbook.innerHTML = '';
@@ -66,11 +70,14 @@ form.addEventListener('submit', async function(event) {
     };
 
     try {
-        const response = await fetch('http://127.0.0.1:8000/climbs/', {
+        const response = await fetch(`/climbs/`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                "ngrok-skip-browser-warning": "69420" // Add this here too!
+            },
             body: JSON.stringify(climbData)
-        });
+		});
 
         const responseData = await response.json();
 
