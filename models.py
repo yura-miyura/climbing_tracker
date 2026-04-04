@@ -1,11 +1,11 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.orm import Mapped, mapped_column
 from database import Base
-
 
 class Climb(Base):
     __tablename__ = "climbs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    grade = Column(String, index=True)
-    is_sent = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(index=True)
+    grade: Mapped[str] = mapped_column(index=True)
+    is_sent: Mapped[bool] = mapped_column(default=False)
+    attempts: Mapped[int] = mapped_column(default=1)

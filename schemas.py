@@ -10,4 +10,6 @@ class ClimbCreate(ClimbBase):
 
 class ClimbResponse(ClimbBase):
     id: int
+    attempts: int
+
     model_config = ConfigDict(from_attributes=True)

@@ -1,6 +1,8 @@
+from typing import Sequence
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.schema import SchemaVisitable
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select, Select
 import models
 import schemas
 from database import SessionLocal, engine
@@ -8,6 +10,14 @@ from database import SessionLocal, engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     db = SessionLocal()
@@ -20,30 +30,47 @@ def get_db():
 
 @app.post("/climbs/", response_model=schemas.ClimbResponse)
 def create_climb(climb: schemas.ClimbCreate, db: Session = Depends(get_db)):
-    existing_sent_climb = None
-    if climb.is_sent:
-        existing_sent_climb = db.query(models.Climb).filter(
-                models.Climb.name == climb.name,
-                models.Climb.grade == climb.grade,
-                models.Climb.is_sent
-                ).first()
-    if existing_sent_climb:
-        raise HTTPException(
-                status_code=400,
-                detail=f"You already logged '{climb.name}' ({climb.grade}) as is_sent: {climb.is_sent}"
-                )
-    db_climb = models.Climb(name=climb.name, grade=climb.grade, is_sent=climb.is_sent)
-    db.add(db_climb)
+    db_climb: models.Climb | None = None
+    stmt = select(models.Climb).where(
+        models.Climb.name == climb.name,
+        models.Climb.grade == climb.grade
+    )
+    existing_climb: models.Climb | None = db.execute(stmt).scalar_one_or_none()
+
+    if existing_climb:
+        if existing_climb.is_sent:
+            raise HTTPException(
+                    status_code=400,
+                    detail=f"You already sent '{climb.name}' ({climb.grade})"
+                    )
+        existing_climb.attempts += 1
+        if climb.is_sent:
+            existing_climb.is_sent = True
+        db_climb = existing_climb
+    else:
+        new_climb = models.Climb(
+            name=climb.name,
+            grade=climb.grade,
+            is_sent=climb.is_sent,
+            attempts=1
+        )
+        db.add(new_climb)
+        db_climb = new_climb
+
     db.commit()
     db.refresh(db_climb)
     return db_climb
 
+
 @app.get("/climbs/", response_model=list[schemas.ClimbResponse])
-def read_climb(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    climbs = db.query(models.Climb).offset(skip).limit(limit).all()
+def read_climb(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> Sequence[models.Climb]:
+    stmt: Select = select(models.Climb).offset(skip).limit(limit)
+    climbs: Sequence[models.Climb] = db.execute(stmt).scalars().all()
     return climbs
 
+
 @app.get("/climbs/sent/", response_model=list[schemas.ClimbResponse])
-def read_sent_climbs(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    climbs = db.query(models.Climb).filter(models.Climb.is_sent).offset(skip).limit(limit).all()
-    return climbs
+def read_sent_climbs(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> Sequence[models.Climb]:
+    stmt: Select = select(models.Climb).where(models.Climb.is_sent).offset(skip).limit(limit)
+    sent_climbs: Sequence[models.Climb] = db.execute(stmt).scalars().all()
+    return sent_climbs
