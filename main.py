@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from sqlalchemy import select, Select
+from sqlalchemy import select, Select, desc
 import models
 import schemas
 from database import SessionLocal, engine
@@ -74,13 +74,20 @@ def create_climb(climb: schemas.ClimbCreate, db: Session = Depends(get_db)):
 
 @app.get("/climbs/", response_model=list[schemas.ClimbResponse])
 def read_climb(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> Sequence[models.Climb]:
-    stmt: Select = select(models.Climb).offset(skip).limit(limit)
+    stmt: Select = select(models.Climb).order_by(desc(models.Climb.updated_at)).offset(skip).limit(limit)
     climbs: Sequence[models.Climb] = db.execute(stmt).scalars().all()
     return climbs
 
 
 @app.get("/climbs/sent/", response_model=list[schemas.ClimbResponse])
 def read_sent_climbs(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> Sequence[models.Climb]:
-    stmt: Select = select(models.Climb).where(models.Climb.is_sent).offset(skip).limit(limit)
-    sent_climbs: Sequence[models.Climb] = db.execute(stmt).scalars().all()
-    return sent_climbs
+    stmt: Select = (
+        select(models.Climb)
+        .where(models.Climb.is_sent)
+        .order_by(desc(models.Climb.updated_at))
+        .offset(skip)
+        .limit(limit)
+    )
+
+    results: Sequence[models.Climb] = db.execute(stmt).scalars().all()
+    return results
