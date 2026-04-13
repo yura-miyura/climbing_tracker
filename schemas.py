@@ -1,16 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import List
-from pydantic import BaseModel, ConfigDict, EmailStr
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: str | None = None
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserBase(BaseModel):
@@ -19,7 +10,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., min_length=8, max_length=72)
 
 
 class UserResponse(UserBase):

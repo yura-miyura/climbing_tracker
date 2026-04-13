@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Bouldering Tracker</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container auth-container">
+        <h2>Welcome Back</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required placeholder="climber@42london.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="••••••••">
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <p class="auth-switch">New here? <a href="/static/signup.html">Create an account</a></p>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // FastAPI OAuth2 expects form data, not JSON, for the token endpoint
+            const formData = new URLSearchParams();
+            formData.append('username', email); // OAuth2 uses 'username' field for email
+            formData.append('password', password);
+
+            try {
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('climbToken', data.access_token);
+                    localStorage.setItem('userId', data.user_id);
+                    window.location.href = '/static/index.html';
+                } else {
+                    document.getElementById('message').textContent = data.detail || "Login Failed";
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>
